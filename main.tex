@@ -67,26 +67,46 @@
 \keywords{Tree mining, frequent itemset mining}
 
 \section{Introduction}
-\dots
+We live in a world full of data. It is generated in several ways: humans produce data every day, using the Internet and the social media; machine generates much more data than the former, for example creating logs or communicating with each other; scientific world is another important producer, but also IoT devices, or health care systems and real time information management. There are endless contributor to the generation of heterogeneous forms of data.
+
+Nowadays data is very easy to retrieve: let us think about the Internet scenario, where every click, every scroll, and every page visited can be tracked: a single user can produce -- without his knowledge, maybe -- dozens of records, saved into a database somewhere. The real challenge is to explore this huge amount of data, to turn it into useful and meaningful information. Many firms may have stored all possible and imaginable data since its foundation, and inside of it there is a potential information mine: for example, the secret of how to make the production of a certain good more efficient, or the preferences of their customers coming from a specific geographic location. Very often the goal of what to search in data is not known, the only constraint is to get something useful.
+
+The latter is the scenario of data mining: extract information from a source of data, without knowing exactly what to search for or what to expect. This project explores one possible application of data mining techniques, where data has a particular but flexible structure, and the results are not predictable.
+
+This report is about the project for the \emph{data mining} course offered by the department of information engineering and computer science\footnote{\url{www.disi.unitn.it}} of the university of Trento. The report is organized as follows: \dots
 
 \section{Problem description}
-How we understood the problem, and maybe the definition of pattern taken from the other report.
+In many scenarios, applications produce records that contain several fields, and these fields are not always indepentent, but the appearence of one may mean the appearence of some others. For example, a list of purchases in a shop can contain similar patterns, or a call made by a web service to some external RESTful services may lead to further calls to other services. Other similar examples can be the flow of exploration of a website, or of a chain of websites, or public administration processes, like the analysis of cases where people ask permissions to restructure buildings or facilities. 
 
-\section{General description}
-General description of the idea and the differences with the other algorithms we know
+These examples share a common property: when executed by several people, they produce some \emph{paths} that are more frequent that others. A path can be a list of web pages ordered by visit, or a set of RESTful service calls made by a server, in order of execution, or the purchase of a precise item that leads to some other purchase.
+
+The goal of this assignment is, given a set of objects connected each other and representing some action in a possible scenario equal or similar to those listed above, find these paths that are more frequent that the others. 
+
+The reality modelled by this problem is made of \emph{records}, where a single record is a possible action performed in a concrete instance of the problem: a RESTful service request or response, the purchase of an item, a click on a button inside a web page, ect. The records are organized into \emph{transactions}, where a transaction is a set of ordered records, structured as a tree. This means that inside of a transaction there is a main record -- the root -- that eventually gives origin to other records, who themselves can generate other records and so on. Being a tree means that each record has at most one parent record -- another record that originated the current one -- and only if the considered record is the root of a transaction it has not a parent. Furthermore, this constraint allows not to have loops inside transactions.
+
+Given a set of transactions, the expected output is a set of (sub)transactions that appear frequently inside the original ones.
+
+\section{General description and similar problems}
+
+A pattern has a tree structure, and it can be developed in three different ways.
+\begin{itemize}
+\item Horizontal -- which means that the pattern is made of a single record, with more than an attribute involved. This kind of pattern is a sort of a logical implication regarding two or more attributes in the same record, where the existence of a certain value implies the existence of some other values in the same record. Referring to Figure~\ref{fig:transaction}, the only possible horizontal pattern is $\{a_1 \colon v_1, a_2 \colon v_2\}$.
+\item vertical -- when the pattern involves more than one record, and for each record one field is concerned, creating a tree structure. In this case, at least two records must be used to create such a pattern, otherwise any frequent value -- like every \texttt{tid} -- would be a pattern. The records in which appear a value belonging to the pattern do not have to be contiguous: in fact, it is possible to have a pattern made of three nodes -- for example $x, y, z$, with $x$ parent of $y$ and $y$ parent of $z$, where the existance of a value in $x$ implies the existance of a value in $z$, with any possible value in $y$. Referring to Figure~\ref{fig:transaction}, the possible vertical patterns are $\{a_1 \colon v_1, a_3 \colon v_3\}$, $\{a_2 \colon v_2, a_3 \colon v_3\}$, $\{a_1 \colon v_1, a_4 \colon v_4\}$, $\{a_2 \colon v_2, a_4 \colon v_4\}$, but also $\{a_3 \colon v_3, a_4 \colon v_4\}$. The latter is an example of a non-contiguos pattern: the parent has any value, and the two children have a value that implies the other one.
+\item both horizontal and vertical -- the case of a vertical pattern, in which the records can have more than one attribute involved in the pattern. Referring to Figure~\ref{fig:transaction}, they can be $\{a_1 \colon v_1, a_2 \colon v_2, a_3 \colon v_3\}$, $\{a_1 \colon v_1, a_2 \colon v_2, a_4 \colon v_4\}$ or $\{a_1 \colon v_1, a_2 \colon v_2, a_3 \colon v_3, a_4 \colon v_4\}$.
+\end{itemize}
 
 \subsection{Assumptions}
 \label{sec:assumptions}
 For the sake of simplification, some assumption exists.
 
-All the records contain at least four attributes: the \texttt{rid} to identify the record; the \texttt{tid} to recognize to which transaction the record belongs; a \texttt{parent} field, containing the \texttt{rid} of the parent record -- which can be empty in case the considered record is the root of a transaction; at least another attribute, which can have any name and any type. The latter kind of attribute is called \emph{generic attribute}. The patterns are built -- and consequently searched for -- on \emph{generic attributes}, and not on the other three types, which do not create any pattern since they are used to describe the structure of the transactions.
+All the records contain at least four attributes: the \texttt{rid} to identify the record; the \texttt{tid} to recognize to which transaction the record belongs; a \texttt{parent} field, containing the \texttt{rid} of the parent record -- which can be empty in case the considered record is the root of a transaction; at least another attribute, which can have any name and any type. The latter kind of attribute is called \emph{generic attribute}. The patterns are searched for only on \emph{generic attributes}, and not on the other three types, which do not create any pattern since they are used to describe the structure of the transactions.
 
 \newdef{definition}{Definition}
 \begin{definition}
 A \emph{generic attribute} is any attribute of a record which is not the \texttt{rid}, the \texttt{tid} or the \texttt{parent} attributes. These attributes represent the features of each record, and the patterns are made of \emph{generic attributes}.
 \end{definition}
 
-All the records are assumed to have the same attributes -- some of them may be empty. Each record has discrete values, belonging to finite sets of possible values. This assumption is needed to make the data mining project easier. From the point of view of the data generation, the absence of this constraint would not complicate anything.
+All the records are assumed to have the same attributes -- some of them may be empty. Each record has discrete values, belonging to finite sets of possible values. This assumption is needed to make the problem computationally easier than having an arbitrary number of possible attributes per record.
 
 \section{Problem statement}
 A record $\boldsymbol{r}$ is a tuple, in the form $<a_1 \colon v_1, a_2 \colon v_2, \text{\dots}, a_n \colon v_n>$, where a pair $a_i \colon v_i$ represents an attribute-value relationship, where $a_i$ is the attribute and $v_i$ the value. These pairs can contain any kind of data, such as numbers or strings. To identify a record, is assumed that each one has an attribute called \emph{record id}, or \texttt{rid} for short.
@@ -104,12 +124,7 @@ Let us define a pattern.
 \begin{definition}
 A pattern is a set of ordered attributes and values belonging to possibly different records in the same transaction. In other words, a pattern is any ordered subset of $\bigcup\limits_{i=1}^{n} \bigcup\limits_{j=1}^{m} \boldsymbol{r_i}<a_j \colon v_j>$, where the ordering is given by the hierarchy of the transaction. For example, in Figure~\ref{fig:transaction} some possible example of pattern are $\{a_1 \colon v_1, a_3 \colon v_3\}$ or $\{a_2 \colon v_2, a_3 \colon v_3\}$, but not $\{a_4 \colon v_4, a_1 \colon v_1\}$, beacuse the latter breakes the hierarchic order.
 
-A pattern has a tree structure, and it can be developed in three different ways.
-\begin{itemize}
-\item Horizontal -- which means that the pattern is made of a single record, with more than an attribute involved. This kind of pattern is a sort of a logical implication regarding two or more attributes in the same record, where the existence of a certain value implies the existence of some other values in the same record. Referring to Figure~\ref{fig:transaction}, the only possible horizontal pattern is $\{a_1 \colon v_1, a_2 \colon v_2\}$.
-\item vertical -- when the pattern involves more than one record, and for each record one field is concerned, creating a tree structure. In this case, at least two records must be used to create such a pattern, otherwise any frequent value -- like every \texttt{tid} -- would be a pattern. The records in which appear a value belonging to the pattern do not have to be contiguous: in fact, it is possible to have a pattern made of three nodes -- for example $x, y, z$, with $x$ parent of $y$ and $y$ parent of $z$, where the existance of a value in $x$ implies the existance of a value in $z$, with any possible value in $y$. Referring to Figure~\ref{fig:transaction}, the possible vertical patterns are $\{a_1 \colon v_1, a_3 \colon v_3\}$, $\{a_2 \colon v_2, a_3 \colon v_3\}$, $\{a_1 \colon v_1, a_4 \colon v_4\}$, $\{a_2 \colon v_2, a_4 \colon v_4\}$, but also $\{a_3 \colon v_3, a_4 \colon v_4\}$. The latter is an example of a non-contiguos pattern: the parent has any value, and the two children have a value that implies the other one.
-\item both horizontal and vertical -- the case of a vertical pattern, in which the records can have more than one attribute involved in the pattern. Referring to Figure~\ref{fig:transaction}, they can be $\{a_1 \colon v_1, a_2 \colon v_2, a_3 \colon v_3\}$, $\{a_1 \colon v_1, a_2 \colon v_2, a_4 \colon v_4\}$ or $\{a_1 \colon v_1, a_2 \colon v_2, a_3 \colon v_3, a_4 \colon v_4\}$.
-\end{itemize}
+By definition, since a transaction is structured as a tree, also a pattern is a tree. This means that a pattern must respect the constraints given by the nature of the data structure: each node has at most one parent node, and there are no loops inside the tree, which means that the edges of the tree are meant to be directed from the parent towards the child node.
 \end{definition}
 
 Given a set of transactions, the goal is to identify patterns of attributes that are frequent, which means transaction that appear at least a given number of time $f$.
@@ -130,60 +145,4 @@ Given a set of transactions, the goal is to identify patterns of attributes that
 % produce the bibliography for the citations in your paper.
 \bibliographystyle{abbrv}
 \bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
-% You must have a proper ".bib" file
-%  and remember to run:
-% latex bibtex latex latex
-% to resolve all references
-%
-% ACM needs 'a single self-contained file'!
-%
-%APPENDICES are optional
-%\balancecolumns
-\appendix
-%Appendix A
-\section{Headings in Appendices}
-The rules about hierarchical headings discussed above for
-the body of the article are different in the appendices.
-In the \textbf{appendix} environment, the command
-\textbf{section} is used to
-indicate the start of each Appendix, with alphabetic order
-designation (i.e. the first is A, the second B, etc.) and
-a title (if you include one).  So, if you need
-hierarchical structure
-\textit{within} an Appendix, start with \textbf{subsection} as the
-highest level. Here is an outline of the body of this
-document in Appendix-appropriate form:
-\subsection{Introduction}
-\subsection{The Body of the Paper}
-\subsubsection{Type Changes and  Special Characters}
-\subsubsection{Math Equations}
-\paragraph{Inline (In-text) Equations}
-\paragraph{Display Equations}
-\subsubsection{Citations}
-\subsubsection{Tables}
-\subsubsection{Figures}
-\subsubsection{Theorem-like Constructs}
-\subsubsection*{A Caveat for the \TeX\ Expert}
-\subsection{Conclusions}
-\subsection{Acknowledgments}
-\subsection{Additional Authors}
-This section is inserted by \LaTeX; you do not insert it.
-You just add the names and information in the
-\texttt{{\char'134}additionalauthors} command at the start
-of the document.
-\subsection{References}
-Generated by bibtex from your ~.bib file.  Run latex,
-then bibtex, then latex twice (to resolve references)
-to create the ~.bbl file.  Insert that ~.bbl file into
-the .tex source file and comment out
-the command \texttt{{\char'134}thebibliography}.
-% This next section command marks the start of
-% Appendix B, and does not continue the present hierarchy
-\section{More Help for the Hardy}
-The acm\_proc\_article-sp document class file itself is chock-full of succinct
-and helpful comments.  If you consider yourself a moderately
-experienced to expert user of \LaTeX, you may find reading
-it useful but please remember not to change it.
-
-% That's all folks!
 \end{document}
