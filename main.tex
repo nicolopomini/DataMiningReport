@@ -67,33 +67,72 @@
 \keywords{Tree mining, frequent itemset mining}
 
 \section{Introduction}
-We live in a world full of data. It is generated in several ways: humans produce data every day, using the Internet and the social media; machine generates much more data than the former, for example creating logs or communicating with each other; scientific world is another important producer, but also IoT devices, or health care systems and real time information management. There are endless contributor to the generation of heterogeneous forms of data.
+We live in a world full of data. It is generated in several ways: humans produce data every day, for example using the Internet and the social media; machine generates much more data than the former, for example creating logs or communicating with each other; scientific world is another important producer, but also IoT devices, or health care systems and real time information management. There are endless contributor to the generation of heterogeneous forms of data.
 
-Nowadays data is very easy to retrieve: let us think about the Internet scenario, where every click, every scroll, and every page visited can be tracked: a single user can produce -- without his knowledge, maybe -- dozens of records, saved into a database somewhere. The real challenge is to explore this huge amount of data, to turn it into useful and meaningful information. Many firms may have stored all possible and imaginable data since its foundation, and inside of it there is a potential information mine: for example, the secret of how to make the production of a certain good more efficient, or the preferences of their customers coming from a specific geographic location. Very often the goal of what to search in data is not known, the only constraint is to get something useful.
+Nowadays data is very easy to retrieve: let us think about the Internet scenario, where every click, every scroll, and every page visited can be tracked: a single user can produce -- without his knowledge, maybe -- dozens of records in a really small amount of time, and these records are saved into a database somewhere. The real challenge is to explore this huge amount of data, to turn it into useful and meaningful information. Many firms may have stored all possible and imaginable data since their foundation, and inside of it there is a potential information mine: for example, the secret of how to make the production of a certain good more efficient, or the preferences of their customers coming from a specific geographic location. Very often the goal of what to search in data is not known, the only constraint is to get something useful.
 
 The latter is the scenario of data mining: extract information from a source of data, without knowing exactly what to search for or what to expect. This project explores one possible application of data mining techniques, where data has a particular but flexible structure, and the results are not predictable.
 
 This report is about the project for the \emph{data mining} course offered by the department of information engineering and computer science\footnote{\url{www.disi.unitn.it}} of the university of Trento. The report is organized as follows: \dots
 
 \section{Problem description}
-In many scenarios, applications produce records that contain several fields, and these fields are not always indepentent, but the appearence of one may mean the appearence of some others. For example, a list of purchases in a shop can contain similar patterns, or a call made by a web service to some external RESTful services may lead to further calls to other services. Other similar examples can be the flow of exploration of a website, or of a chain of websites, or public administration processes, like the analysis of cases where people ask permissions to restructure buildings or facilities. 
+In many scenarios, applications produce records that contain several fields, and these fields are not always indepentent, but the appearence of one may mean the appearence of some others. For example, a list of purchases in a shop can contain similar patterns, or a call made by a web service to some external RESTful services may lead to further calls to other services. Other similar examples can be the flows of exploration of a website, or of a chain of websites, or public administration processes, like the analysis of cases where people ask permissions to restructure buildings or facilities. 
 
-These examples share a common property: when executed by several people, they produce some \emph{paths} that are more frequent that others. A path can be a list of web pages ordered by visit, or a set of RESTful service calls made by a server, in order of execution, or the purchase of a precise item that leads to some other purchase.
+These examples share a common property: when executed by several people, they produce some \emph{paths} that are more frequent that others. A path can be a list of web pages ordered by visit, or a set of RESTful service calls made by a server, in order of execution, or the purchase of a precise item that leads to some other purchase. For example, buying a toothbrush is likely to purchase also some toothpaste: if this was the case, observing the list of purchases of a shop, and considering those cases where the former item is bought, it would be easy to find also the latter product. This is an example of a \emph{frequent pattern}.
 
 The goal of this assignment is, given a set of objects connected each other and representing some action in a possible scenario equal or similar to those listed above, find these paths that are more frequent that the others. 
 
-The reality modelled by this problem is made of \emph{records}, where a single record is a possible action performed in a concrete instance of the problem: a RESTful service request or response, the purchase of an item, a click on a button inside a web page, ect. The records are organized into \emph{transactions}, where a transaction is a set of ordered records, structured as a tree. This means that inside of a transaction there is a main record -- the root -- that eventually gives origin to other records, who themselves can generate other records and so on. Being a tree means that each record has at most one parent record -- another record that originated the current one -- and only if the considered record is the root of a transaction it has not a parent. Furthermore, this constraint allows not to have loops inside transactions.
+The reality modelled by this problem is made of \emph{records}, where a single record is a possible action performed in a concrete instance of the problem: a RESTful service request or response, the purchase of an item, a click on a button inside a web page, ect. One record is a list of key-value attributes: for example, in a HTTP request/response scenario, the possible attributes of the record can be the IP addresses of the sender and of the recipient, the timestamp of the request, the type of request (e.g. GET, POST), etc. 
+
+The records are organized into \emph{transactions}, where a transaction is a set of ordered records, structured as a tree. This means that inside of a transaction there is a main record -- the root -- that eventually gives origin to other records, who themselves can generate other records and so on. Being a tree means that each record has at most one parent record -- another record that originated the current one -- and only if the considered record is the root of a transaction it has not a parent. Furthermore, this constraint allows not to have loops inside transactions. A transaction can be a list of RESTful service calls made by some server to fulfill a user's request, or a list of items bought by a customer.
 
 Given a set of transactions, the expected output is a set of (sub)transactions that appear frequently inside the original ones.
 
 \section{General description and similar problems}
+The naive approach to solve this problem consists in generating all the possible combinations of attributes of records of all the transactions, to observe how many times each combination appears, and to select those apprearing at least a certain number of time $f$. By definition, this approach has a high computational complexity, since the number of combinations grows exponentially with the number of transactions and the number of possible values of the attributes of the records.
 
-A pattern has a tree structure, and it can be developed in three different ways.
+Furthermore, a pattern has a tree structure, and it can be developed in three different ways.
 \begin{itemize}
 \item Horizontal -- which means that the pattern is made of a single record, with more than an attribute involved. This kind of pattern is a sort of a logical implication regarding two or more attributes in the same record, where the existence of a certain value implies the existence of some other values in the same record. Referring to Figure~\ref{fig:transaction}, the only possible horizontal pattern is $\{a_1 \colon v_1, a_2 \colon v_2\}$.
 \item vertical -- when the pattern involves more than one record, and for each record one field is concerned, creating a tree structure. In this case, at least two records must be used to create such a pattern, otherwise any frequent value -- like every \texttt{tid} -- would be a pattern. The records in which appear a value belonging to the pattern do not have to be contiguous: in fact, it is possible to have a pattern made of three nodes -- for example $x, y, z$, with $x$ parent of $y$ and $y$ parent of $z$, where the existance of a value in $x$ implies the existance of a value in $z$, with any possible value in $y$. Referring to Figure~\ref{fig:transaction}, the possible vertical patterns are $\{a_1 \colon v_1, a_3 \colon v_3\}$, $\{a_2 \colon v_2, a_3 \colon v_3\}$, $\{a_1 \colon v_1, a_4 \colon v_4\}$, $\{a_2 \colon v_2, a_4 \colon v_4\}$, but also $\{a_3 \colon v_3, a_4 \colon v_4\}$. The latter is an example of a non-contiguos pattern: the parent has any value, and the two children have a value that implies the other one.
 \item both horizontal and vertical -- the case of a vertical pattern, in which the records can have more than one attribute involved in the pattern. Referring to Figure~\ref{fig:transaction}, they can be $\{a_1 \colon v_1, a_2 \colon v_2, a_3 \colon v_3\}$, $\{a_1 \colon v_1, a_2 \colon v_2, a_4 \colon v_4\}$ or $\{a_1 \colon v_1, a_2 \colon v_2, a_3 \colon v_3, a_4 \colon v_4\}$.
 \end{itemize}
+
+This means that a pattern can have a very complex structure, and it can involve several records spreaded across the whole transaction.
+
+The idea of the developed solution for this problem is to reduce the numbers of possible combinations of attributes of records to generate, using a well-known problem that is similar but easier to the current one, the \emph{frequent itemsets} problem. The proposed solution flattens the tree structures into a list of strings, where a single string is the concatenation of an attribute key with its value, and for each tree -- a single transaction -- a list containing all the concatenations of all the records belonging to the tree is generated. 
+
+\newdef{definition}{Definition}
+\begin{definition}
+Given a transaction $t$, its flattered representation -- $flattered(t)$ -- is a set of strings defined in the following way:
+\[
+\{r.a_{key} \oplus r.a_{value} \quad \forall r \in records(t) \quad \forall a \in attributes(r) \}
+\]
+where $records(t)$ is the list of records belonging to the transaction $t$, $attributes(r)$ are all the attributes in the record $r$, and $\oplus$ is the string concatenation operation.
+\end{definition}
+
+Therefore, $n$ transactions are flattened into $n$ lists of strings, and these list are given to the frequent itemset miner algorithm, which returns a list of tuples of attributes, where each tuple is a recurrent list of attributes inside all the transactions. Strings of concatenated key-values attributes are used because they allow to distinguish easily all the possible combinations of values for each attribute.
+
+This approach allows to prune the space of possible frequent patterns: in fact, if a combination of attributes does not belong to the frequent itemsets, it is not a frequent pattern.
+
+\newtheorem{theorem}{Theorem}
+\begin{theorem}
+The combinations of attributes that do not appear in the result of the frequent itemset algorothm do not form any frequent pattern.
+\end{theorem}
+
+\begin{proof}
+Let us prove the theorem by contradiction. Let assume that a pattern $p$ is frequent, and its $flattered(p)$ does not appear entirely in the resulting frequent itemsets. This means that its attributes do not appear frequently in the whole set of transaction, and thus it is not possible to create a pattern with these attributes that is frequent among all the transactions. This means that $p$ is not frequent, and this is a contradiction with the initial assumption.
+\end{proof}
+
+Starting from the frequent itemsets, the frequent patterns are searched for. Unfortunately, the result of the frequent itemsets does not give any information about the structure of the pattern, so the only available knowledge is that the pattern is made of at least those attributes.
+
+There are similar problems but different from this, and now a brief description of them is provided. Finally, some assumptions on the current problem are stated.
+
+\subsection{Frequent itemset problem}
+\dots
+
+\subsection{Frequent subtrees problem}
+\dots
 
 \subsection{Assumptions}
 \label{sec:assumptions}
@@ -101,7 +140,6 @@ For the sake of simplification, some assumption exists.
 
 All the records contain at least four attributes: the \texttt{rid} to identify the record; the \texttt{tid} to recognize to which transaction the record belongs; a \texttt{parent} field, containing the \texttt{rid} of the parent record -- which can be empty in case the considered record is the root of a transaction; at least another attribute, which can have any name and any type. The latter kind of attribute is called \emph{generic attribute}. The patterns are searched for only on \emph{generic attributes}, and not on the other three types, which do not create any pattern since they are used to describe the structure of the transactions.
 
-\newdef{definition}{Definition}
 \begin{definition}
 A \emph{generic attribute} is any attribute of a record which is not the \texttt{rid}, the \texttt{tid} or the \texttt{parent} attributes. These attributes represent the features of each record, and the patterns are made of \emph{generic attributes}.
 \end{definition}
