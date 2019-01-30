@@ -126,10 +126,20 @@ Let us prove the theorem by contradiction. Let assume that a pattern $p$ is freq
 
 Starting from the frequent itemsets, the frequent patterns are searched for. Unfortunately, the result of the frequent itemsets does not give any information about the structure of the pattern, so the only available knowledge is that the pattern is made of at least those attributes.
 
-There are similar problems but different from this, and now a brief description of them is provided. Finally, some assumptions on the current problem are stated.
+There are similar problems but different from this one, and now a brief description of them is provided. Finally, some assumptions on the current problem are stated.
 
-\subsection{Frequent itemset problem}
-\dots
+\subsection{Frequent item-sets problem - Association rules}
+In this scenario, there exists records very similar to those in the problem descibed in this report. In fact, also here a record can have an arbitrary number of attributes, which are called \emph{items}. Given a list of records, the goal of this problem is to find sets of items that appear frequently inside records. Usually, the minimum frequency of appearance to consider a set of items as a frequent itemset is a parameter of the problem, and often it is express as a fraction of the number of records that contain the set with respect to the total number of records.
+
+This problem is computed iteratively, starting with itemsets of cardinality equals to 2, and trying to growing the size of the sets until there are no more frequent sets. The idea is to use the $k$-frequent itemsets -- those itemsets whose size is equal to $k$ -- to build valid $k + 1$-frequent itemsets.
+
+There are several approach to this problem, like the \emph{A priori} or the \emph{PCY} algorithms, which optimize the use of memory and the number of disk reads.
+
+An extension of this problem is the \emph{Association rules} mining, where, instead of simple sets of attributes, logic implication rules are searched for -- in the form $\{a_i, \dotsc, a_k\} \implies \{a_j, \dotsc, a_l\}$. In the previous case, the order with which the attributes are found inside a record does not matter, since it is only necessary that they appear together; in this case, instead, the order matters: in fact, the expressions $A \implies B$ and $B \implies A$ are different.
+
+In literature, these problems are well known, and several publications about them exist, such as \cite{agrawal1994fast, ivancsy2006time, rakesh1993mining, brin1997dynamic}.
+
+This scenario is not sufficient for the main problem considered in this report, because the former has a lack of structure in the data. The proposed view is flattened, and it is not possible to infer tree like structure froms simple sets of attributes. Anyway, our approach is based on these problems, since -- as stated in Theorem~1 -- the attributes of a frequent pattern in a tree scenario belong to a frequent itemset of the flattened representation of the trees.
 
 \subsection{Frequent subtrees problem}
 \dots
