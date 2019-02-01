@@ -49,13 +49,20 @@
 %\crdata{0-12345-67-8/90/01}  % Allows default copyright data (X-XXXXX-XX-X/XX/XX) to be over-ridden.
 % --- End of Author Metadata ---
 
-\title{Frequent itemset mining in tree-like sequences of complex objects \\ \large Nicol\`o Pomini [203319] and Marco Merlin[205263]}
-%
-% You need the command \numberofauthors to handle the "boxing"
-% and alignment of the authors under the title, and to add
-% a section for authors number 4 through n.
-
+\title{Frequent itemset mining in tree-like sequences of complex objects}
 \numberofauthors{2}
+\author{
+\alignauthor
+Nicol\`o Pomini\\
+       \affaddr{Mat. 203319}\\
+       \affaddr{University of Trento, Trento}\\
+       \affaddr{nicolo.pomini@studenti.unitn.it}
+\alignauthor
+Marco Merlin\\
+       \affaddr{Mat. 205263}\\
+       \affaddr{University of Trento, Trento}\\
+       \affaddr{marco.merlin@studenti.unitn.it}
+}
 %
 \maketitle
 \begin{abstract}
@@ -161,7 +168,7 @@ All the records contain at least four attributes: the \texttt{rid} to identify t
 A \emph{generic attribute} is any attribute of a record which is not the \texttt{rid}, the \texttt{tid} or the \texttt{parent} attributes. These attributes represent the features of each record, and the patterns are made of \emph{generic attributes}.
 \end{definition}
 
-All the records are assumed to have the same attributes -- some of them may be empty. Each record has discrete values, belonging to finite sets of possible values. This assumption is needed to make the problem computationally easier than having an arbitrary number of possible attributes per record.
+All the records are assumed to have the same attributes -- some of them may be empty, to make the organization of the data easier. This contraint does not cause any loss of generality: in fact, in case the records are desired to be composed by a different number (and type) of attributes, it is sufficient to provide to each record all the attributes, living some of them empty.
 
 The data is assumed to be organized in a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record.
 
