@@ -170,7 +170,7 @@ A \emph{generic attribute} is any attribute of a record which is not the \texttt
 
 All the records are assumed to have the same attributes -- some of them may be empty, to make the organization of the data easier. This contraint does not cause any loss of generality: in fact, in case the records are desired to be composed by a different number (and type) of attributes, it is sufficient to provide to each record all the attributes, living some of them empty.
 
-The data is assumed to be organized in a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record.
+The data is assumed to be organized in a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. Furthermore, a vector of strings $\boldsymbol{a}$ is expected, containing the names of the attributes.
 
 \section{Problem statement}
 A record $\boldsymbol{r}$ is a tuple, in the form $<a_1 \colon v_1, a_2 \colon v_2, \text{\dots}, a_n \colon v_n>$, where a pair $a_i \colon v_i$ represents an attribute-value relationship, where $a_i$ is the attribute and $v_i$ the value. These pairs can contain any kind of data, such as numbers or strings. To identify a record, is assumed that each one has an attribute called \emph{record id}, or \texttt{rid} for short.
@@ -196,9 +196,55 @@ Given a set of transactions, the goal is to identify patterns of attributes that
 \section{Algorithms}
 The procedure to mine the frequent patterns inside the transactions follows these steps: first of all, the input file is scanned and organized into some data structures; secondly, each transaction is submitted to the frequent itemsets algorithm; thridly, each frequent itemset is analyzed in each transaction, searching if the itemset appears in some ways inside the transaction; finally, the found pattern are counted, and those above the given threshold $f$ are kept and displayed as frequent.
 
-In this section the various parts are descibed in details.
+In this section the various parts are described in details.
 
 \subsection{Input parsing and data organization}
+As said in Section~\ref{sec:assumptions}, the expected input is composed by a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. In addition to that, a vector of strings $\boldsymbol{a}$ is needed, containing the names of the attributes. Of course at least three attributes -- \texttt{rid}, \texttt{tid}, \texttt{parent} -- must be part of $\boldsymbol{a}$. Furthermore, an integer threshold $f$ is needed, to decide how many times a frequent pattern has to appear at least.
+
+At the beginning, $M$ is scanned by its rows, and each record (a single row $i$ of the matrix) is saved into a dictionary: the key of a record is its \texttt{rid}, and the content is a set of pairs $<k_j \colon v_j>$, where $k_j = \boldsymbol{a}_j$ and $v_j = M[i,j]$. In this way, given the \texttt{rid}, it is very easy and fast to retrieve the entire record. The dictionary is called $records$. The algorithm to populate this dictionary is trivial, and for this reason is omitted from the report. It is assumed that the dictionary data structure, with a method to add an object giving its key -- $add(key, value)$ -- and a method to search by key -- $lookup(key)$ -- exists.
+
+After that, the attributes of the records are analyzed, to reconstruct the transactions. To do so, a data structure -- called Tree --- is used: it is a simple tree made by nodes, where a node can have an arbitrary number of children. This data structure is defined in Table~\ref{tab:tree}. As can be seen, this data structure is needed to keep track of the structure and the hierarchy between nodes belonging to the same transaction. A node having the parent attribute set to the \texttt{null} type -- $\bot$ -- is a root of a transaction.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|ll|} \hline
+\textbf{Tree} & \\ \hline
+\textbf{parent} & Tree \\ \hline
+\textbf{children} & Tree[] \\ \hline
+\textbf{rid} & string \\
+\hline\end{tabular}
+\caption{Tree object definition.}
+\label{tab:tree}
+\end{table}
+
+To build the transaction, two scans of the dictionary $records$ are needed: the first one to create a node for each record, the second one to assign the degrees of kinship between nodes. This process is described in the Algorithm~\ref{build_trees}, which returns a list of trees, containing the root node of each transaction.
+
+\begin{algorithm}
+\caption{Construct the transactions from the dictionary of records $records$.}
+\label{build_trees}
+\begin{algorithmic}[1]
+\Function{generateTrees}{Dictionary $records$}
+\State $roots \gets new Dictionary()$
+\State $nodes \gets new Dictionary()$
+\For{$rid \in records$}
+	\State $node \gets new Tree()$ 
+	\State $node._{rid} \gets rid$
+	\State $nodes.add(rid, node)$
+\EndFor
+\For{$rid \in records$}
+	\State $parent \gets records.lookup(rid)._{parent}$
+	\If{$parent = \bot$}
+		\State $roots.add(rid, nodes.lookup(rid))$
+	\Else
+		\State $child \gets records.lookup(rid)$
+		\State $parent._{children} \gets parent._{children} \cup \{child\}$
+		\State $child._{parent} \gets parent$
+	\EndIf
+\EndFor
+\Return $roots$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Frequent itemsets in transactions}
 
