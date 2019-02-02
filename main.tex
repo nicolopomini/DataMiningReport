@@ -194,7 +194,17 @@ By definition, since a transaction is structured as a tree, also a pattern is a 
 Given a set of transactions, the goal is to identify patterns of attributes that are frequent, which means transaction that appear at least a given number of time $f$.
 
 \section{Algorithms}
-\dots
+The procedure to mine the frequent patterns inside the transactions follows these steps: first of all, the input file is scanned and organized into some data structures; secondly, each transaction is submitted to the frequent itemsets algorithm; thridly, each frequent itemset is analyzed in each transaction, searching if the itemset appears in some ways inside the transaction; finally, the found pattern are counted, and those above the given threshold $f$ are kept and displayed as frequent.
+
+In this section the various parts are descibed in details.
+
+\subsection{Input parsing and data organization}
+
+\subsection{Frequent itemsets in transactions}
+
+\subsection{Frequent pattern mining}
+
+\subsection{Pattern count}
 
 \section{Experiments}
 \dots
