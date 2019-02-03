@@ -95,7 +95,8 @@ The records are organized into \emph{transactions}, where a transaction is a set
 
 Given a set of transactions, the expected output is a set of (sub)transactions that appear frequently inside the original ones.
 
-\section{General description and similar problems}
+\section{Approach description and similar problems}
+\label{sec:general}
 The naive approach to solve this problem consists in generating all the possible combinations of attributes of records of all the transactions, to observe how many times each combination appears, and to select those apprearing at least a certain number of time $f$. By definition, this approach has a high computational complexity, since the number of combinations grows exponentially with the number of transactions and the number of possible values of the attributes of the records.
 
 Furthermore, a pattern has a tree structure, and it can be developed in three different ways.
@@ -172,6 +173,8 @@ All the records are assumed to have the same attributes -- some of them may be e
 
 The data is assumed to be organized in a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. Furthermore, a vector of strings $\boldsymbol{a}$ is expected, containing the names of the attributes.
 
+Without loss of generality, all the names and the values of the attributes of a record are assumed to be strings -- since every object can be represented by a string and built from a string.
+
 \section{Problem statement}
 A record $\boldsymbol{r}$ is a tuple, in the form $<a_1 \colon v_1, a_2 \colon v_2, \text{\dots}, a_n \colon v_n>$, where a pair $a_i \colon v_i$ represents an attribute-value relationship, where $a_i$ is the attribute and $v_i$ the value. These pairs can contain any kind of data, such as numbers or strings. To identify a record, is assumed that each one has an attribute called \emph{record id}, or \texttt{rid} for short.
 
@@ -217,7 +220,7 @@ After that, the attributes of the records are analyzed, to reconstruct the trans
 \label{tab:tree}
 \end{table}
 
-To build the transaction, two scans of the dictionary $records$ are needed: the first one to create a node for each record, the second one to assign the degrees of kinship between nodes. This process is described in the Algorithm~\ref{build_trees}, which returns a list of trees, containing the root node of each transaction.
+To build the transaction, two scans of the dictionary $records$ are needed: the first one to create a node for each record, the second one to assign the degrees of kinship between nodes. In particular, during the second iteration, every node is checked to see if its parent has a value, or it is set to $\bot$: in the first case, it means that the node has a parent, and so its parent is set, and in its parent the node is added as a child; in the second case, it means that the node is a root of a transaction, and so the node is added to a dictionary of treees $roots$. This process is described in the Algorithm~\ref{build_trees}, which returns the dictionary of trees containing the root node of each transaction.
 
 \begin{algorithm}
 \caption{Construct the transactions from the dictionary of records $records$.}
@@ -228,17 +231,17 @@ To build the transaction, two scans of the dictionary $records$ are needed: the 
 \State $nodes \gets new Dictionary()$
 \For{$rid \in records$}
 	\State $node \gets new Tree()$ 
-	\State $node._{rid} \gets rid$
+	\State $node_{rid} \gets rid$
 	\State $nodes.add(rid, node)$
 \EndFor
 \For{$rid \in records$}
-	\State $parent \gets records.lookup(rid)._{parent}$
+	\State $parent \gets records.lookup(rid)_{parent}$
 	\If{$parent = \bot$}
 		\State $roots.add(rid, nodes.lookup(rid))$
 	\Else
 		\State $child \gets records.lookup(rid)$
-		\State $parent._{children} \gets parent._{children} \cup \{child\}$
-		\State $child._{parent} \gets parent$
+		\State $parent_{children} \gets parent_{children} \cup \{child\}$
+		\State $child_{parent} \gets parent$
 	\EndIf
 \EndFor
 \Return $roots$
@@ -247,10 +250,65 @@ To build the transaction, two scans of the dictionary $records$ are needed: the 
 \end{algorithm}
 
 \subsection{Frequent itemsets in transactions}
+Once the input is parsed and the tree structures are built, it is time to apply the frequent itemsets mining algorithm, to search for tuples of attributes that will be the starting point of the frequent pattern mining. As explained in Section~\ref{sec:general}, this approach allows to optimize the number of patterns to search inside the transaction: instead of trying all the possible combinations of attributes, a frequent itemset mining is applied to filter some combinations that for sure would not give any frequent pattern.
+
+The frequent itemset mining algorithm is well known, and it is widely described in \cite{agrawal1994fast}. For this description, it is assumed to have a function $frequentItemsets(String[][] itemsets, float confidence)$ that takes a list of list of strings, and a floating point number representing the minimum confidence needed to consider an itemset as frequent. This function returns a set if tuples, where each tuple contains an arbitrary number of attributes.
+
+To transform a transaction -- whose structure is a tree -- to a list of strings, the function $flattered(Tree t)$ is used. This function has to be able to flatten the tree structure, but also to distinguish between attributes with the same name but with different values. To do so, the name and the value of each attribute of each record are concatenated together, putting in between a special string " = ". For example, if the record $r_1$ has the attribute $<a \colon 1>$ and the record $r_2$ the attribute $<a \colon 2>$, the string version of their attribute is, respectively, "a = 1" and "a = 2". Let us define formaly such function. An important osservation is that the frequent itemsets algorithm works with sets of attributes, so the order with which a transaction is traversed to create its flattened version is indifferent. The procedure is described in Algortihm~\ref{flatten}, which is a wrapper function for the Algorithm~\ref{flattenrec}.
+
+\begin{algorithm}
+\caption{Create the flattened version of a transaction.}
+\label{flatten}
+\begin{algorithmic}[1]
+\Function{flatten}{Tree $t$, Dictionary $records$}
+\State $itemsets \gets new String[]$
+\State $flattenRec(t, records, itemsets)$ \\
+\Return $itemsets$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Recursive function to create the flattened version of a transaction.}
+\label{flattenrec}
+\begin{algorithmic}[1]
+\Function{flattenRec}{Tree $t$, Dictionary $records$, String[] $itemsets$}
+\State $record \gets records.lookup(t_{rid})$
+\For{$tuple \in record$}
+	\State $s \gets tuple_{key} \oplus \text{" = "} \oplus tuple_{value}$
+	\State $itemsets \gets itemsets \cup \{s\}$
+\EndFor
+\For{$child \in t_{children}$}
+	\State $flattenRec(child, records, itemsets)$
+\EndFor
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Finally, all the transaction are flattened, and the resulting matrix of strings -- where on the rows there are the various transactions, and on the columns the concatenated attributes -- is given as input to the frequent itemsets algorithm. This can be seen in Algorithm~\ref{freqitemset}.
+
+\begin{algorithm}
+\caption{Flat the transaction and compute the frequent itemsets.}
+\label{freqitemset}
+\begin{algorithmic}[1]
+\Function{getFrequentItemsets}{Tree[] $transactions$, Dictionary $records$, float $confidence$}
+\State $globalItemsets \gets new String[][]$
+\For{$t \in transactions$}
+	\State $flat \gets flatten(t, records)$
+	\State $globalItemsets \gets globalItemsets \cup \{flat\}$
+\EndFor
+\Return $frequentItemsets(globalItemsets, confidence)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Frequent pattern mining}
 
 \subsection{Pattern count}
+describe eq and hash of trees \dots
+
+\section{Implementation}
+\dots
 
 \section{Experiments}
 \dots
