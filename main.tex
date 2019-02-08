@@ -303,9 +303,44 @@ Finally, all the transaction are flattened, and the resulting matrix of strings 
 \end{algorithm}
 
 \subsection{Frequent pattern mining}
+\dots
+a parole chiama i pattern tree risultanti "candidates", e definisci con una tabella la struttura PatternTree
 
-\subsection{Pattern count}
-describe eq and hash of trees \dots
+\subsection{Pattern count and selection}
+Once all the candidate patterns are generated, it is time to group those that are equal, and to count them. To do so, a dictionary is used, with keys the candidate patterns, and values the counter of the relative pattern. Because of this data structure, it is possible to count all the candidate patterns in linear time with respect to the number of candidates: in fact, it is necessary just to visit each pattern once, verify if it is already in the dictionary -- in case it is, is sufficient to upgrade the counter, otherwise a new object is inserted in the dictionary, with its count equals to 1.
+
+To operate with a dictionary, it is necessary that the objects used as keys define an equals function and a hash function: the two functions are very similar, and they are both take count of the attributes of the transaction, but also the length and the structure of it. They are defined recursively, starting from the roots of the trees: two patterns are equals if the root nodes have the same attributes and if the set of children of one root is equals to the set of children of the other. The same can be said for the hash function: two transactions have the same hash value if the roots are equals, and if the children of one are equals to the children of the other. Two leaves are equals -- have the same hash value -- if they have the same attributes. Of course the ordering of the attributes and children has no importance in this scenario, the only important thing is that two nodes that are equal must have the same content. For this reason, mathematical sets are used with attributes and children. Two sets $S_1$ and $S_2$ are equals if $S_1 \subseteq S_2 \land S_2 \subseteq S_1$. The hash function of a set is the hash of its content, in this case strings or other PatternTree, while the hash of a tuple is the concatenation of the hash of its elements. The equal function between two PatternTree is shown in Algorithm~\ref{equals}, while the hash function of a PatternTree is defined in Algorithm~\ref{hash}.
+
+\begin{algorithm}
+\caption{Comparison between two PatternTree.}
+\label{equals}
+\begin{algorithmic}[1]
+\Function{equals}{PatternTree $p_1$, PatternTree $p_2$}
+\State $attributes_1 \gets \{i : i \in p_1.fields\}$
+\State $attributes_2 \gets \{i : i \in p_2.fields\}$
+\State $children_1 \gets \{c : c \in p_1.children\}$
+\State $children_2 \gets \{c : c \in p_2.children\}$
+\State $length_1 \gets 1 + |children_1|$
+\State $length_2 \gets 1 + |children_2|$ \\
+\Return $attributes_1 = attributes_2 \land children_1 = children_2 \land length_1 = length_2$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Hash function of a PatternTree.}
+\label{hash}
+\begin{algorithmic}[1]
+\Function{hash}{PatternTree $p$}
+\State $attributes \gets \{i : i \in p.fields\}$
+\State $children \gets \{c : c \in p.children\}$
+\State $length \gets 1 + |children|$ \\
+\Return $hash(attributes, children, length)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+Algoritmo di conteggio, filtro e ordinamento.
 
 \section{Implementation}
 \dots
