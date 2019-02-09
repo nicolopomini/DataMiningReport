@@ -171,7 +171,7 @@ A \emph{generic attribute} is any attribute of a record which is not the \texttt
 
 All the records are assumed to have the same attributes -- some of them may be empty, to make the organization of the data easier. This contraint does not cause any loss of generality: in fact, in case the records are desired to be composed by a different number (and type) of attributes, it is sufficient to provide to each record all the attributes, living some of them empty.
 
-The data is assumed to be organized in a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. Furthermore, a vector of strings $\boldsymbol{a}$ is expected, containing the names of the attributes.
+The data is assumed to be organized in a matrix $M \in \Sigma^{n \times d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. Furthermore, a vector of strings $\boldsymbol{a}$ is expected, containing the names of the attributes.
 
 Without loss of generality, all the names and the values of the attributes of a record are assumed to be strings -- since every object can be represented by a string and built from a string.
 
@@ -197,12 +197,13 @@ By definition, since a transaction is structured as a tree, also a pattern is a 
 Given a set of transactions, the goal is to identify patterns of attributes that are frequent, which means transaction that appear at least a given number of time $f$.
 
 \section{Algorithms}
+\label{sec:alg}
 The procedure to mine the frequent patterns inside the transactions follows these steps: first of all, the input file is scanned and organized into some data structures; secondly, each transaction is submitted to the frequent itemsets algorithm; thridly, each frequent itemset is analyzed in each transaction, searching if the itemset appears in some ways inside the transaction; finally, the found pattern are counted, and those above the given threshold $f$ are kept and displayed as frequent.
 
 In this section the various parts are described in details.
 
 \subsection{Input parsing and data organization}
-As said in Section~\ref{sec:assumptions}, the expected input is composed by a matrix $M \in \Sigma^{n * d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. In addition to that, a vector of strings $\boldsymbol{a}$ is needed, containing the names of the attributes. Of course at least three attributes -- \texttt{rid}, \texttt{tid}, \texttt{parent} -- must be part of $\boldsymbol{a}$. Furthermore, an integer threshold $f$ is needed, to decide how many times a frequent pattern has to appear at least.
+As said in Section~\ref{sec:assumptions}, the expected input is composed by a matrix $M \in \Sigma^{n \times d}$, where $\Sigma$ is the dictionary from which the values of the attributes belong to -- it can be a finite subset of $\mathbb{N}$, or a set of strings -- $n$ is the number of records, and $d$ the number of attributes per record. In addition to that, a vector of strings $\boldsymbol{a}$ is needed, containing the names of the attributes. Of course at least three attributes -- \texttt{rid}, \texttt{tid}, \texttt{parent} -- must be part of $\boldsymbol{a}$. Furthermore, an integer threshold $f$ is needed, to decide how many times a frequent pattern has to appear at least.
 
 At the beginning, $M$ is scanned by its rows, and each record (a single row $i$ of the matrix) is saved into a dictionary: the key of a record is its \texttt{rid}, and the content is a set of pairs $<k_j \colon v_j>$, where $k_j = \boldsymbol{a}_j$ and $v_j = M[i,j]$. In this way, given the \texttt{rid}, it is very easy and fast to retrieve the entire record. The dictionary is called $records$. The algorithm to populate this dictionary is trivial, and for this reason is omitted from the report. It is assumed that the dictionary data structure, with a method to add an object giving its key -- $add(key, value)$ -- and a method to search by key -- $lookup(key)$ -- exists.
 
@@ -308,6 +309,7 @@ Finally, all the transaction are flattened, and the resulting matrix of strings 
 The frequent itemsets functions returns a list of lists of attributes. Each of these lists contain a set of attributes which appears frequently among the transactions. We do not really care about which attribute appears in which set but we do care about the attribute themselves because in order to be in any of these sets they have to appear a significant amount of times. The list of lists of attributes is transformed in a set of attributes so that each attribute appears only once. Algorithm ... uses this list to filter frequent attributes in the transactions. To do so it cycles through every node of every transaction and substitutes the node's attributes list with the intersection between the latter and the frequent attributes set. The result is a set containing attributes which were in the node's attribute list and were also identified as frequent by the frequent itemsets algorithm. The final result of this operation are transactions containing only attributes which appear at least a fixed amount of times among all the transactions.
 
 \subsection{Frequent pattern mining}
+\label{sec:patternmining}
 
 The pattern mining process consists in extracting all possible patterns from each transaction and group all of them into one list. At the end of this process, each transaction will have a list containing all possible patterns which are contained in it. In order to store and represent a pattern a new data structure is defined called PatternNode or PNode for short.
 
@@ -326,10 +328,10 @@ The pattern mining process consists in extracting all possible patterns from eac
 This structure is needed as patterns should only encode a structure and the attributes they contain, they don't need and rid and all the other attributes the structure Tree has. Furthermore this structure also has some unique methods (which will be described later) which the Tree structure does not need and vice versa. Very much like the Tree structure, PNode also has a parent attributes and a child attributes which are used to encode the structure of the pattern which needs to be represented. The fields attribute may or may not be empty as patterns may contain nodes which have no attributes and only encode a structural pattern.
 \\
 \\
-The algorithm which computes the pattern uses a recursive bottom up approach starting from each leaf of the transaction and working its way up the tree while slowly generating all possible nodes and attributes combinations. The algorithm itself takes as input 3 parameters: A Node representing the current node to be visited which will be called $currentNode$, a global list containing all patterns computed up to this point which will be called $globalPatterns$ and a list of PNodes containing any pattern to be expanded coming from a child which will be called $patternsToExpand$. Since the algorithm is very complex let us start by describing the most simple case a leaf with no attributes. Initially the algorithm is called on each leaf of a given transaction. A call to a leaf has the $currentNode$ parameter set to the leaf, the $globalPatterns$ parameter set to a global list defined at a higher level so that it is shared between all the calls of the algorithm for a given transaction and the $patternsToExpand$ parameter set to empty list. The only possible pattern which can be generated by such a leaf is indeed the empty leaf itself. An empty PNode is generated and appended to the $patternsToExpand$ parameter. Since a single empty PNode cannot be considered a pattern it is not added to the $globalPatterns$ parameter. The algorithm is then called recursively on $currentNode$'s parent with $globalPatterns$ and the new $patternsToExpand$ parameter. A still simple but more interesting case is when the leaf is not empty and actually contains one or more attributes. Differently from the previous case, a PNode for each possible combination of $currentNode$'s attributes is generated and appended to $patternsToExpand$ together with the empty PNode.
+The algorithm which computes the pattern uses a recursive bottom up approach starting from each leaf of the transaction and working its way up the tree while slowly generating all possible nodes and attributes combinations. The algorithm itself takes as input 3 parameters: A Node representing the current node to be visited which will be called $currentNode$, a global list containing all patterns computed up to this point which will be called $globalPatterns$ and a list of PNodes containing any pattern to be expanded coming from a child which will be called $patternsToExpand$. Since the algorithm is very complex let us start by describing the most simple case a leaf with no attributes. Initially the algorithm is called on each leaf of a given transaction. A call to a leaf has the $currentNode$ parameter set to the leaf, the $globalPatterns$ parameter set to a global list defined at a higher level so that it is shared between all the calls of the algorithm for a given transaction and the $patternsToExpand$ parameter set to empty list. The only possible pattern which can be generated by such a leaf is indeed the empty leaf itself. An empty PNode is generated and appended to the $patternsToExpand$ parameter. Since a single empty PNode cannot be considered a pattern it is not added to the $globalPatterns$ parameter. The algorithm is then called recursively on the parent of $currentNode$, with $globalPatterns$ and the new $patternsToExpand$ parameter. A still simple but more interesting case is when the leaf is not empty and actually contains one or more attributes. Differently from the previous case, a PNode for each possible combination of the attributes of $currentNode$ is generated and appended to $patternsToExpand$ together with the empty PNode.
 
 \subsection{Pattern count and selection}
-Once all the candidate patterns are generated, it is time to group those that are equal, and to count them. To do so, a dictionary is used, with keys the candidate patterns, and values the counter of the relative pattern. Because of this data structure, it is possible to count all the candidate patterns in linear time with respect to the number of candidates: in fact, it is necessary just to visit each pattern once, verify if it is already in the dictionary -- in case it is, is sufficient to upgrade the counter, otherwise a new object is inserted in the dictionary, with its count equals to 1.
+Once all the candidate patterns are generated, it is time to group those that are equal, and to count them. To do so, a dictionary is used, with keys the candidate patterns, and values the counter of the relative pattern. Because of this data structure, it is possible to count all the candidate patterns in linear time with respect to the number of candidates: in fact, it is necessary just to visit each pattern once, verify if it is already in the dictionary -- in case it is, is sufficient to increment the counter, otherwise a new object is inserted in the dictionary, with its count equals to 1.
 
 To operate with a dictionary, it is necessary that the objects used as keys define an equals function and a hash function: the two functions are very similar, and they are both take count of the attributes of the transaction, but also the length and the structure of it. They are defined recursively, starting from the roots of the trees: two patterns are equals if the root nodes have the same attributes and if the set of children of one root is equals to the set of children of the other. The same can be said for the hash function: two transactions have the same hash value if the roots are equals, and if the children of one are equals to the children of the other. Two leaves are equals -- have the same hash value -- if they have the same attributes. Of course the ordering of the attributes and children has no importance in this scenario, the only important thing is that two nodes that are equal must have the same content. For this reason, mathematical sets are used with attributes and children. Two sets $S_1$ and $S_2$ are equals if $S_1 \subseteq S_2 \land S_2 \subseteq S_1$. The hash function of a set is the hash of its content, in this case strings or other PatternTree, while the hash of a tuple is the concatenation of the hash of its elements. The equal function between two PatternTree is shown in Algorithm~\ref{equals}, while the hash function of a PatternTree is defined in Algorithm~\ref{hash}.
 
@@ -362,14 +364,72 @@ To operate with a dictionary, it is necessary that the objects used as keys defi
 \end{algorithmic}
 \end{algorithm}
 
+At this point is possible to proceed to count how many times a pattern appears among the all transaction. As said, to do so a new dictionary -- called $filter$ -- is created, and iterating over all the found candidate patterns, it is just necessary to check whether the current pattern is already in the dictionary or not.
 
-Algoritmo di conteggio, filtro e ordinamento.
+Once all the patterns are count, two other operations are performed: sorting and filtering. Not all the patterns have the same relevance: the more frequent a pattern is, the more important, but also the larger it is, the more important. To decide this relation of \emph{importance} between patterns, a function is defined, that takes count of both the length and the frequency of the pattern. The length of a pattern is the number of nodes it contains, while the frequency is how many time it appears among the transactions. The \emph{importance} function is defined as follows:
+\begin{gather}
+\begin{split}
+importance & \colon PatternNode \to \mathbb{N} \\
+importance & \colon node \mapsto node_{length} \times node_{frequency}
+\end{split}
+\end{gather}
+
+As regards the filtering, it is very simple: all the patterns that appear less than a given number of times $f$, they are discarded.
+
+The whole procedure is defined in Algorithm~\ref{counting}: the patterns are counted, filtered and then sorted. Finally, the sorted list is returned, assuming that $sortByImportance$ sorts the dictionary using the \emph{importance} function, and returns a list of patterns.
+
+\begin{algorithm}
+\caption{Count, filter and sort the patterns.}
+\label{counting}
+\begin{algorithmic}[1]
+\Function{CountSortFilter}{PatternNode[] $candi\-da\-tes$, Integer $f$}
+\State $filter \gets new Dictionaty()$
+\For{$pattern \in candidates$}
+	\State $stored \gets filter.lookup(pattern)$
+	\If{$stored = \bot$}
+		\State $filter.add(pattern, 1)$
+	\Else
+		\State $stored \gets stored + 1$
+	\EndIf
+\EndFor
+\For{$pattern \in filter$}
+	\If{$filter.lookup(pattern) < f$}
+		\State $filter.remove(pattern)$
+	\EndIf
+\EndFor
+\Return $sortByImportance(pattern)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+To sum up, the whole procedure to mine the frequent subtree in the transaction is the following: the input matrix is read and organized in a dictionary, with one entry for every record; from the records, the tree-structured transaction are reconstructed with the Algorithm~\ref{build_trees}; each record is flattened into a list of string with Algorithm~\ref{flatten}, and the resulting list of strings is used in Algorithm~\ref{freqitemset}; starting from the frequent combinations of attributes, the candidate patterns are generated, and finally they are counted, sorted and filtered by the Algorithm~\ref{counting}.
 
 \section{Implementation}
+The steps and algorithms described in Section~\ref{sec:alg} are implemented in a program, that takes as input a \texttt{csv} file, and integer $f$ and writes its output in a \texttt{txt} file. In particular, the input file is the translation of the matrix $M$ described in the assumptions -- Section~\ref{sec:assumptions} -- and it is expected to have $n + 1$ lines, where the first line contains the list of the names of the attributes of each record, and the following $n$ lines contains the attribute values of each record. The integer $f$ is the threshold over which a pattern is considered frequent, and in the output file are printed the frequent patterns ordered by their importance. For each frequent pattern, its frequency, its length, its importance value and the whole pattern are included in the output file.
 
-\dots
+The software is written in Python\footnote{www.python.org}, and it makes use of the Pandas\footnote{pandas.pydata.org} library \cite{mckinney2010data} and the \texttt{mlxtend} library for the frequent itemset mining\footnote{rasbt.github.io/mlxtend}. In particular, the latter library works with an one-hot encoding of the attributes of the nodes, and for this reason Pandas is used, as suggested by the documentation of \texttt{mlxtend}.
 
+The software is developed using an object oriented paradigm, and therefore it is composed by many small components that interact with each other. Each of this component has been tested, with several test cases, to verify its behaviour and its correctness.
+
+\subsection{Use the software}
+To use the software, it is mandatory to have a Python interpreter installed, at least with version 3.6, and to install the dependencies -- the libraries needed by the software -- by running the command \texttt{pip install -r requirements.txt}. To launch the software it is necessary to run the command \texttt{python src/main.py <arguments>}, with the following possible argument list:
+\begin{itemize}
+\item \texttt{-out filename}, to specify the filename on which the output is written. Default is \texttt{output.txt};
+\item \texttt{-in filename}, to specify the file from which the input is read. It has to be a \texttt{csv} file. Default is \texttt{input.csv};
+\item \texttt{-thr integer}, the minimum number of times a pattern has to appear to be considered frequent. Default is 4;
+\end{itemize}
+ 
 \section{Experiments}
+The software has been tested and compared with the so called \emph{baseline}, another software that does the same operation with a different approach. In this section the \emph{baseline} is briefly described, and then the results of the experiments are given.
+
+\subsection{The baseline}
+As said, the baseline is another software that does the same task of the one described in this report, with which our software is compared. In particular, the baseline uses the same approach described in Section~\ref{sec:patternmining}, but without the attribute filter made with the frequent itemset algorithm. 
+
+Algorithmically speaking, the baseline does the following: the input matrix is read and organized in a dictionary, with one entry for every record; from the records, the tree-structured transaction are reconstructed with the Algorithm~\ref{build_trees}; the whole list of transaction is used as input for the candidate pattern mining algorithm -- in this way there are much more combination of attributes that the algorithm has to check, and finally they are counted, sorted and filtered by the Algorithm~\ref{counting}.
+
+In this way, it is possible to demonstrate the validity of the optimization performed filtering the less frequent combination of attributes using the frequent itemset mining algorithm. The next subsection shows the results of the performed experiments.
+
+\subsection{Results}
 \dots
 
 \section{Conclusions}
