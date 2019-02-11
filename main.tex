@@ -256,7 +256,7 @@ To build the transaction, two scans of the dictionary $records$ are needed: the 
 \subsection{Frequent itemsets in transactions}
 Once the input is parsed and the tree structures are built, it is time to apply the frequent itemsets mining algorithm, to search for tuples of attributes that will be the starting point of the frequent pattern mining. As explained in Section~\ref{sec:general}, this approach allows to optimize the number of patterns to search inside the transaction: instead of trying all the possible combinations of attributes, a frequent itemset mining is applied to filter some combinations that for sure would not give any frequent pattern.
 
-The frequent itemset mining algorithm is well known, and it is widely described in \cite{agrawal1994fast}. For this description, it is assumed to have a function $frequentItemsets(String[][] itemsets, float confidence)$ that takes a list of list of strings, and a floating point number representing the minimum confidence needed to consider an itemset as frequent. This function returns a set if tuples, where each tuple contains an arbitrary number of attributes.
+The frequent itemset mining algorithm is well known, and it is widely described in \cite{agrawal1994fast}. For this description, it is assumed to have a function $frequentItemsets(String[][] itemsets, float support)$ that takes a list of list of strings, and a floating point number representing the minimum support needed to consider an itemset as frequent. The support of an itemset is the fraction of lists that contains the itemset, over all the lists. This function returns a set if tuples, where each tuple contains an arbitrary number of attributes.
 
 To transform a transaction -- whose structure is a tree -- to a list of strings, the function $flattered(Tree t)$ is used. This function has to be able to flatten the tree structure, but also to distinguish between attributes with the same name but with different values. To do so, the name and the value of each attribute of each record are concatenated together, putting in between a special string " = ". For example, if the record $r_1$ has the attribute $<a \colon 1>$ and the record $r_2$ the attribute $<a \colon 2>$, the string version of their attribute is, respectively, "a = 1" and "a = 2". Let us define formaly such function. An important osservation is that the frequent itemsets algorithm works with sets of attributes, so the order with which a transaction is traversed to create its flattened version is indifferent. The procedure is described in Algortihm~\ref{flatten}, which is a wrapper function for the Algorithm~\ref{flattenrec}.
 
@@ -405,7 +405,9 @@ The whole procedure is defined in Algorithm~\ref{counting}: the patterns are cou
 To sum up, the whole procedure to mine the frequent subtree in the transaction is the following: the input matrix is read and organized in a dictionary, with one entry for every record; from the records, the tree-structured transaction are reconstructed with the Algorithm~\ref{build_trees}; each record is flattened into a list of string with Algorithm~\ref{flatten}, and the resulting list of strings is used in Algorithm~\ref{freqitemset}; starting from the frequent combinations of attributes, the candidate patterns are generated, and finally they are counted, sorted and filtered by the Algorithm~\ref{counting}.
 
 \section{Implementation}
-The steps and algorithms described in Section~\ref{sec:alg} are implemented in a program, that takes as input a \texttt{csv} file, and integer $f$ and writes its output in a \texttt{txt} file. In particular, the input file is the translation of the matrix $M$ described in the assumptions -- Section~\ref{sec:assumptions} -- and it is expected to have $n + 1$ lines, where the first line contains the list of the names of the attributes of each record, and the following $n$ lines contains the attribute values of each record. The integer $f$ is the threshold over which a pattern is considered frequent, and in the output file are printed the frequent patterns ordered by their importance. For each frequent pattern, its frequency, its length, its importance value and the whole pattern are included in the output file.
+The steps and algorithms described in Section~\ref{sec:alg} are implemented in a program, that takes as input a \texttt{csv} file, and integer $f$ and writes its output in a \texttt{txt} file. In particular, the input file is the translation of the matrix $M$ described in the assumptions -- Section~\ref{sec:assumptions} -- and it is expected to have $n + 1$ lines, where the first line contains the list of the names of the attributes of each record, and the following $n$ lines contains the attribute values of each record. The integer $f$ is the threshold over which a pattern is considered frequent -- it is called $thr$ in the program -- and in the output file are printed the frequent patterns ordered by their importance. For each frequent pattern, its frequency, its length, its importance value and the whole pattern are included in the output file. 
+
+The patterns are printed like trees, where two nodes on the same identation level are siblings. Every node with identation level $i$ is child of the previous node that has an identation level $i - 1$. Furthermore, in each node are indicated the list of names and values of attributes that compose the pattern: an empty node -- with an empty list of such attributes -- is any possible node, with any possible attribute names and values.
 
 The software is written in Python\footnote{www.python.org}, and it makes use of the Pandas\footnote{pandas.pydata.org} library \cite{mckinney2010data} and the \texttt{mlxtend} library for the frequent itemset mining\footnote{rasbt.github.io/mlxtend}. In particular, the latter library works with an one-hot encoding of the attributes of the nodes, and for this reason Pandas is used, as suggested by the documentation of \texttt{mlxtend}.
 
@@ -423,14 +425,69 @@ To use the software, it is mandatory to have a Python interpreter installed, at 
 The software has been tested and compared with the so called \emph{baseline}, another software that does the same operation with a different approach. In this section the \emph{baseline} is briefly described, and then the results of the experiments are given.
 
 \subsection{The baseline}
-As said, the baseline is another software that does the same task of the one described in this report, with which our software is compared. In particular, the baseline uses the same approach described in Section~\ref{sec:patternmining}, but without the attribute filter made with the frequent itemset algorithm. 
+As said, the baseline is another software that does the same task of the one described in this report, with which our software is compared. In particular, the baseline uses the same approach described in Section~\ref{sec:patternmining}, but without the attribute filter made with the frequent itemset mining algorithm. 
 
 Algorithmically speaking, the baseline does the following: the input matrix is read and organized in a dictionary, with one entry for every record; from the records, the tree-structured transaction are reconstructed with the Algorithm~\ref{build_trees}; the whole list of transaction is used as input for the candidate pattern mining algorithm -- in this way there are much more combination of attributes that the algorithm has to check, and finally they are counted, sorted and filtered by the Algorithm~\ref{counting}.
 
 In this way, it is possible to demonstrate the validity of the optimization performed filtering the less frequent combination of attributes using the frequent itemset mining algorithm. The next subsection shows the results of the performed experiments.
 
-\subsection{Results}
-\dots
+\subsection{Experiment results}
+\label{sec:exp-res}
+Analyze this software is very hard, because the final results strongly depend on how the input is structured, and not by the parameters with whom the input was generated. As it is described in this section, there are \emph{smaller} input -- in terms of number of records and transactions -- that takes much more time and resources with respect to \emph{larger} ones. The real magnitude of comlexity is given by the cardinality of the set of all the frequent patterns that exist in the input transactions. This number is not related with the number of transactions inside the input, or with the number of patterns generated, but only with the complexity of such patterns: in fact, a complex pattern that involves several nodes gives rise to many sub-patterns, and since the bigger one is frequent, all the smallers are frequent too. Let us give an example: a pattern made of three nodes, each one with two attributes, includes a total number of 63 different frequent patterns. In fact, for each node a pattern with all the attributes, with only one attribute and with no attributes exists -- 4 possibility -- multiplying these combinations with all the 3 nodes -- $4 \times 4 \times 4$ -- and removing the case in which all the nodes are \emph{empty} -- which means that in each node any possible value is accepted, which is not a pattern -- gives 63 combinations. In general, the combinations of a pattern made by $m$ nodes, each one with at most $n$ attributes that belong to the pattern, have an upper buond equals to $2^{n \times m} - 1$. Of course, the more complex a pattern is, the more the problem explodes.
+
+In general, 5 datasets were generated with the generator -- see the big data report for further details -- and used for the tests: all of them constains two main patterns distributed over 1, 2, 5, 10 and 20 transaction respectively. Three types of tests are performed: one to compare the baseline and our algorithm while mining all the possible patterns, another one mining only patterns without \emph{empty} nodes, and finally a test comparing the outcomes of our algorithm changing the support hyperparameter of the frequent itemset mining. In the next subsections these tests are described in details.
+
+All the test are performed on a machine with a 2GHz Intel Core i7 processor, and 8GB of RAM.
+
+\subsubsection{All pattern test}
+
+\begin{figure}
+\centering
+\epsfig{file=test1.pdf, scale=0.5}
+\caption{Comparison of the execution times between our solution and the baseline.}
+\label{fig:testone}
+\end{figure}
+
+The very first conducted test is about the performance comparison between our algorithm and the baseline. In addition to that, also the cardinality of the resulting sets of frequent pattern is analyzed.
+
+In particular, for each available dataset, both the software are used, timing their executions and saving their outputs. As regards the outputs, they turned out to be always the same: the two sets have always been equals to each other. This means that applying a filter on the attribute values using the frequent itemset mining algorithm with a support value equals to 0.2 did not exclude any valid frequent pattern. Since the two sets are equals, they are not plotted in any way, but their cardinality is now given:
+\begin{itemize}
+\item the first input, with one transaction, gives rise to 52977 frequent patterns;
+\item the second input, with two transactions, gives rise to 49162 frequent patterns;
+\item the third input, with five transactions, gives rise to 777174 frequent patterns;
+\item the fourth input, with ten transactions, gives rise to 11899 frequent patterns;
+\item the fifth input, with twenty transactions, gives rise to 9783 frequent patterns.
+\end{itemize}
+
+As regards the times of the exectutions, those of our algorithm have always been definitely lower than those of the baseline. Furthermore, for the fourth and the fifth input, it was not possible to test the baseline, since after several hours of executions, the operative system killed their respective processes. Investigating a bit, the reason was that the processes was taking almost the entirety of the RAM, and also around 40GB of the SSD space. For this reason, the graph in Figure~\ref{fig:testone} shows only a partial curve for the baseline times. 
+
+In both the latter graph and the latter list is possible to observe what is said in Section~\ref{sec:exp-res}: the exectution times depends on the complexity of the patterns, and therefore by how many sub-patterns is possible to find.
+
+\subsubsection{Contiguous pattern test}
+
+\begin{figure}
+\centering
+\epsfig{file=test2.pdf, scale=0.5}
+\caption{Comparison of the execution times between our solution and the baseline looking for contiguous patterns only.}
+\label{fig:testtwo}
+\end{figure}
+
+In the second test only the \emph{contiguous} patterns are searched for, or those patterns where each node that compose them has specific values for the attributes involved in the pattern. In other words, these kinds of patterns are composed by a specific set of attributes spreaded among nodes, and there are no generic nodes that can be composed by any possible attribute.
+
+This test is performed to see how the two solutions perform with an easier task, that lowers the complexity of finding the frequent patterns. Also in this case, both the execution times and the cardinalities of the outcomes are considered. The latter are much smaller than the ones in the first test, as can be seen in the following list:
+\begin{itemize}
+\item the first input, with one transaction, gives rise to 0 frequent patterns with only contiguous nodes;
+\item the second input, with two transactions, gives rise to 5 frequent patterns with only contiguous nodes;
+\item the third input, with five transactions, gives rise to 48683 frequent patterns with only contiguous nodes;
+\item the fourth input, with ten transactions, gives rise to 16 frequent patterns with only contiguous nodes;
+\item the fifth input, with twenty transactions, gives rise to 28 frequent patterns with only contiguous nodes.
+\end{itemize}
+
+As regards the exectution times, they are also much smaller than the previous test: in this case also with the fourth and the fifth inputs the baseline program was able to terminate, but with very high execution times: with the fourth, the baseline took around 4 hours, while with the fifth around 6 hours. On the other hand, our solution took less than a second with the last two inputs. To avoid scale problems, the fourth and the fifth cases are omitted from the graph in Figure~\ref{fig:testtwo}, that shows only the first three cases. 
+
+In conclusion, in these tests the performances of the two algorithms can vary a lot: as can be seen in Figure~\ref{fig:testtwo}, with three inputs out of five, the baseline was faster, but in the last two cases our solution was definitely faster.
+
+\subsubsection{Different support values for the frequent itemsets algorithm}
 
 \section{Conclusions}
 \dots
