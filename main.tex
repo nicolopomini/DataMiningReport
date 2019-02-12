@@ -80,7 +80,7 @@ Nowadays data is very easy to retrieve: let us think about the Internet scenario
 
 The latter is the scenario of data mining: extract information from a source of data, without knowing exactly what to search for or what to expect. This project explores one possible application of data mining techniques, where data has a particular but flexible structure, and the results are not predictable.
 
-This report is about the project for the \emph{data mining} course offered by the department of information engineering and computer science\footnote{\url{www.disi.unitn.it}} of the university of Trento. The report is organized as follows: \dots
+This report is about the project for the \emph{data mining} course offered by the department of information engineering and computer science\footnote{\url{www.disi.unitn.it}} of the university of Trento. The report is organized as follows: in Section~2 the problem is described informally; in Section~3 the intuition behind our approach is explained, together with some other well known problems that are similar but different from the current one, and also with some assumtions; the Section~4 contains the formal problem statement; Section~5 is about the algorithm details of the used approach to solve this problem; Section~6 describes the software implemented to solve the problem; finally, on Section~7, the experiments performed on the software are presented.
 
 \section{Problem description}
 In many scenarios, applications produce records that contain several fields, and these fields are not always indepentent, but the appearence of one may mean the appearence of some others. For example, a list of purchases in a shop can contain similar patterns, or a call made by a web service to some external RESTful services may lead to further calls to other services. Other similar examples can be the flows of exploration of a website, or of a chain of websites, or public administration processes, like the analysis of cases where people ask permissions to restructure buildings or facilities. 
@@ -289,19 +289,19 @@ To transform a transaction -- whose structure is a tree -- to a list of strings,
 \end{algorithmic}
 \end{algorithm}
 
-Finally, all the transaction are flattened, and the resulting matrix of strings -- where on the rows there are the various transactions, and on the columns the concatenated attributes -- is given as input to the frequent itemsets algorithm. This can be seen in Algorithm~\ref{freqitemset}.
+Finally, all the transaction are flattened, and the resulting matrix of strings -- where on the rows there are the various transactions, and on the columns the concatenated attributes -- is given as input to the frequent itemsets algorithm. This can be seen in Algorithm~\ref{freqitemset}. The support value used for the frequent itemsets mining is equal to 0.2.
 
 \begin{algorithm}
 \caption{Flat the transaction and compute the frequent itemsets.}
 \label{freqitemset}
 \begin{algorithmic}[1]
-\Function{getFrequentItemsets}{Tree[] $transactions$, Dictionary $records$, float $confidence$}
+\Function{getFrequentItemsets}{Tree[] $transactions$, Dictionary $records$, float $support$}
 \State $globalItemsets \gets new String[][]$
 \For{$t \in transactions$}
 	\State $flat \gets flatten(t, records)$
 	\State $globalItemsets \gets globalItemsets \cup \{flat\}$
 \EndFor
-\Return $frequentItemsets(globalItemsets, confidence)$
+\Return $frequentItemsets(globalItemsets, support)$
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
@@ -451,7 +451,7 @@ All the test are performed on a machine with a 2GHz Intel Core i7 processor, and
 \begin{figure}
 \centering
 \epsfig{file=test1.pdf, scale=0.5}
-\caption{Comparison of the execution times between our solution and the baseline.}
+\caption{Comparison of the execution times between our solution and the baseline. Since the last two inputs were not testable on the baseline, they are not reported in the graph.}
 \label{fig:testone}
 \end{figure}
 
@@ -495,6 +495,26 @@ As regards the exectution times, they are also much smaller than the previous te
 In conclusion, in these tests the performances of the two algorithms can vary a lot: as can be seen in Figure~\ref{fig:testtwo}, with three inputs out of five, the baseline was faster, but in the last two cases our solution was definitely faster.
 
 \subsubsection{Different support values for the frequent itemsets algorithm}
+
+\begin{figure}
+\centering
+\epsfig{file=test3.pdf, scale=0.5}
+\caption{Comparison of the execution times using different values for the support in the frequent itemset mining algorithm.}
+\label{fig:test3}
+\end{figure}
+
+\begin{figure}
+\centering
+\epsfig{file=test4.pdf, scale=0.5}
+\caption{Comparison of the cardinality of the resulting sets of frequent patterns using different values for the support in the frequent itemset mining algorithm.}
+\label{fig:test4}
+\end{figure}
+
+An important hyperparameter that influences on the behaviour of the algorithm is the support value given to the frequent itemset mining algorithm, which represent the minimum value of the fractions of itemsets that contains a specific item to consider such item as frequent. The higher this value, the more selective the algorithm is. As a consequence, the more the algorithm is selective, the less combinations are tried by our procedure, but also the less candidate patterns are generated. For this reason, two different values for the hyperparameter are tested: 0.2 and 0.5 respectively.
+
+The Figure~\ref{fig:test3} shows the response time differences using the two different values: of course, the higher the parameter, the less combinations are tried, and so the response time is always lower using the higher value. On the other hand, as can be seen in Figure~\ref{fig:test4}, the lower value offers a much more precise output: in fact, the cardinality of the set of the frequent patterns is always greater when the support value is equals to 0.2.
+
+In conclusion, is was decided to reward the precision with respect to the performance, and for this reason the used value of the support for the frequent itemset mining algorithm is equal to 0.2.
 
 \section{Conclusions}
 \dots
