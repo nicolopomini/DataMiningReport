@@ -313,7 +313,7 @@ The frequent itemsets functions returns a list of lists of attributes. Each of t
 \caption{Filter out non frequent attributes.}
 \label{filter_attributes}
 \begin{algorithmic}[1]
-\Function{filterAttributes}{Tree $node$, String[] $frequentAttributes$}
+\Function{filterAttributes}{Tree $node$, String[] $fre\-quent\-Attributes$}
 \State $fields \gets \{\}$
 \For{$field \in node_{fields}$}
     \State $fields \gets fields \cup field_{key} \oplus \text{" = "} \oplus field_{value}$
@@ -360,7 +360,7 @@ The two cases that were just described are the simplest cases possible, and they
 \Function{PatternMining}{Tree $currentNode$, Tree[] $transactionNodes$, PNode[] $globalPatterns$, PNode[] $patternsToExpand$}
 \State $childCount \gets |currentNode_{children}|$
 \If{$|patternsToExpand| > 0$}
-    \State $currentNode_{childPatterns} \gets currentNode_{childPatterns} \cup patternsToExpand$
+    \State $currentNode_{childPatterns} \gets cur\-rent\-Node_{child\-Pat\-terns} \cup pat\-terns\-To\-Expand$
 \EndIf
 \State $currentNode_{calls} = currentNode_{calls} + 1$
 \If{$currentNode_{calls} >= childCount$}
@@ -369,7 +369,7 @@ The two cases that were just described are the simplest cases possible, and they
     \State $newPNodes \gets []$
     \If{$fieldCount > 0$}
         \For{$i \gets 0 \text{ to } fieldCount$}
-            \State $fieldsCombinations \gets combinations(currentNode_{fields}, i + 1)$
+            \State $fieldsCombinations \gets com\-bi\-na\-tions(cur\-rent\-Node_{fields}, i + 1)$
             \For{$combination \in fieldsCombinations$}
                 \State $newNode \gets new PNode()$
                 \State $newNode_{fields} \gets combination$
@@ -382,18 +382,18 @@ The two cases that were just described are the simplest cases possible, and they
     \State $newNodes \gets newNodes \cup emptyPNode$
     \State $newPatterns \gets newPatterns \cup emptyPNode$
     \For{$i \gets 0 \text{ to } childCount$}
-        \State $childCombinations \gets combinations(currentNode_{children}, i + 1)$
+        \State $childCombinations \gets com\-bi\-na\-tions(cur\-rent\-Node_{children}, i + 1)$
         \For{$childCombination \in childCombinations$}
             \State $lastChildIndex \gets |childCombination| - 1$
             \State $childCombinatorIndex \gets []$
             \State $childCombinatorSize \gets []$
             \For{$k \gets 0 \text{ to } lastChildIndex + 1$}
                 \State $childCombinatorIndex[k] \gets 0$
-                \State $childCombinatorSize[k] \gets |childCombination[k]|$
-                \While{$childCombinatorIndex[0] < childCombinatorSize[0]$}
+                \State $childCombinatorSize[k] \gets |child\-Com\-bi\-na\-tion[k]|$
+                \While{$childCombinatorIndex[0] < child\-Com\-bi\-na\-tor\-Size[0]$}
                     \State $patternsToCombine \gets []$
                     \For{$j \gets 0 \text{ to } lastChildIndex + 1$}
-                        \State $patternsToCombine[j] \gets childCombination[j][childCombinatorIndex[j]]$
+                        \State $patternsToCombine[j] \gets child\-Com\-bi\-na\-tion[j][child\-Com\-bi\-na\-tor\-Index[j]]$
                     \EndFor
                     \For{$node \in newNodes$}
                         \For{$z \gets 0 \text{ to } lastChildIndex + 1$}
@@ -403,11 +403,11 @@ The two cases that were just described are the simplest cases possible, and they
                         \EndFor
                         \State $newPatterns \gets newPatterns \cup node$
                     \EndFor
-                    \State $childCombinatorIndex[lastChildIndex] \gets childCombinatorIndex[lastChildIndex] + 1$
+                    \State $childCombinatorIndex[lastChildIndex] \gets child\-Com\-bi\-na\-tor\-Index[lastChildIndex] + 1$
                     \For{$z \gets lastChildIndex \text{ to } 0$}
-                        \If{$childCombinatorSize[z] - childCombinatorIndex[z] = 0$}
+                        \If{$childCombinatorSize[z] - child\-Com\-bi\-na\-tor\-Index[z] = 0$}
                             \State $childCombinatorIndex[z] \gets 0$
-                            \State $childCombinatorIndex[z - 1] \gets childCombinatorIndex[z - 1] + 1$
+                            \State $childCombinatorIndex[z - 1] \gets child\-Com\-bi\-na\-tor\-Index[z - 1] + 1$
                         \EndIf
                     \EndFor
                 \EndWhile
@@ -426,7 +426,7 @@ The two cases that were just described are the simplest cases possible, and they
         \EndIf
     \EndFor
     \If{$parent != \bot$}
-        \State $PatternMining(parent, transactionNodes, globalPatterns, newPatterns)$
+        \State $PatternMining(pa\-rent, tran\-sac\-tion\-No\-des, global\-Patterns, new\-Patterns)$
     \EndIf
 \EndIf
 \EndFunction
@@ -646,13 +646,10 @@ The Figure~\ref{fig:test3} shows the response time differences using the two dif
 In conclusion, is was decided to reward the precision with respect to the performance, and for this reason the used value of the support for the frequent itemset mining algorithm is equal to 0.2.
 
 \section{Conclusions}
-In this paper were described the methods used, the algorithms developed and the results obtained during the implementation of an application for frequent itemsets mining in tree-like sequences of complex objects. It was demonstrated how big the task is in terms of complexity. Our implementation allows to make the problem more approachable by filtering attributes which are guaranteed to not appear in any frequent pattern as they do not appear enough times among all objects in order to be frequent. Our method was also compared with a baseline which tackles the full size problem without any filtering performed on the attributes. The comparisons demonstrated that our method generally allows to make the problem several orders of magnitude smaller. It must be said that in some cases our algorithm would not bring any improvement compared to the baseline, consider transactions composed only by frequent patterns for example. However, in the average instance there will always be at least one attribute which can be safely removed without losing any frequent pattern allowing to make the problem considerably smaller.
+In this paper were described the methods used, the algorithms developed and the results obtained during the design and the implementation of an application for frequent itemsets mining in tree-like sequences of complex objects. It was demonstrated how big the task is in terms of complexity. Our implementation allows to make the problem more approachable by filtering attributes which are guaranteed not to appear in any frequent pattern as they do not appear enough times among all objects in order to be frequent. Our method was also compared with a baseline which tackles the full size problem without any filter action performed on the attributes. The comparisons demonstrated that our method generally allows to make the problem several orders of magnitude smaller. It must be said that in some cases our algorithm would not bring any improvement compared to the baseline, consider transactions composed only by frequent patterns for example. However, in the average instance there will always be at least one attribute which can be safely removed without losing any frequent pattern allowing to make the problem considerably smaller.
 
-%\end{document}  % This is where a 'short' article might terminate
-%
-% The following two commands are all you need in the
-% initial runs of your .tex file to
-% produce the bibliography for the citations in your paper.
+\subsection{Future works}
+By its nature, this problem is suitable for distributing or parallel computations. In fact, both the frequent itemset mining and the frequent pattern mining can be done computing the itemsets or the subpatterns respectively inside single lists of items -- or transactions -- and then combine the results to find which of them are frequent. In this way it would be possible to assign to each thread a subset of transactions, let it compute the list of patterns inside of them, and then combine its results with those of the others. In a similar way, it would be possible to apply a map-reduce protocol in case the transaction were distributed among different machines: in this case each machine would search for the candidate patterns in its data -- the map part -- and then the results of all the workers would be combined together -- the reduce part. In this way it would be possible to guarantee more scalability and better performances.
 \bibliographystyle{abbrv}
 \bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
 \end{document}
