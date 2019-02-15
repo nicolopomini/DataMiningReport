@@ -563,7 +563,7 @@ The software has been tested and compared with the so called \emph{baseline}, an
 \subsection{The baseline}
 As we just stated, the baseline is another software that does the same task of the one described in this report, with which our software is compared. In particular, the baseline uses the same approach described in Section~\ref{sec:patternmining}, but without performing the attribute filtering procedure described in Section \ref{freqsettra}.
 
-Algorithmically speaking, the baseline does the following: the input matrix is red and organized in a dictionary, with one entry for every record; from the records, the tree-structured transaction are reconstructed with the Algorithm~\ref{build_trees}; the whole list of transaction is used as input for the candidate pattern mining algorithm -- in this way there are much more combination of attributes that the algorithm has to check, and finally they are counted, sorted and filtered by the Algorithm~\ref{counting}.
+Algorithmically speaking, the baseline does the following: the input matrix is red and organized in a dictionary, with one entry for every record; from the records, the tree-struc\-tu\-red transaction are reconstructed with the Algorithm~\ref{build_trees}; the whole list of transaction is used as input for the candidate pattern mining algorithm -- in this way there are much more combination of attributes that the algorithm has to check, and finally they are counted, sorted and filtered by the Algorithm~\ref{counting}.
 
 In this way, it is possible to demonstrate the validity of the optimization performed filtering the less frequent combination of attributes using the frequent itemset mining algorithm. The next subsection shows the results of the performed experiments.
 
